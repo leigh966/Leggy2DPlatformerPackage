@@ -2,7 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-
+[RequireComponent(typeof(CapsuleCollider2D))]
 public class Basic2DPlatformController : MonoBehaviour
 {
     public float walkingAcceleration,desiredHeightFromGround, groundDragCoef, airDragCoef, maxStep, gravity, jumpVelocity;
@@ -30,6 +30,8 @@ public class Basic2DPlatformController : MonoBehaviour
         }
         return false;
     }
+
+    Collider2D wallRight = null, wallLeft = null;
 
     // Update is called once per frame
     void Update()
@@ -61,7 +63,34 @@ public class Basic2DPlatformController : MonoBehaviour
                 velocity += Vector3.left * walkingAcceleration * Time.deltaTime;
             }
         }
-
+        if(wallLeft != null && velocity.x<0f || wallRight != null && velocity.x>0f)
+        {
+            velocity.x = 0f;
+        }
         transform.Translate(velocity*Time.deltaTime);
     }
+
+    private void OnTriggerEnter2D(Collider2D collider)
+    {
+        if(collider.gameObject.layer == 6) // walls
+        {
+            float xDifference = collider.transform.position.x - transform.position.x;
+            if(xDifference > 0.5f)
+            {
+                wallRight = collider;
+            }
+            else if(xDifference < -0.5f)
+            {
+                wallLeft = collider;
+            }
+
+        }
+    }
+
+    private void OnTriggerExit2D(Collider2D collision)
+    {
+        if(collision==wallLeft) wallLeft = null;
+        if(collision==wallRight) wallRight = null;
+    }
+
 }
