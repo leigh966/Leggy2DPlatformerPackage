@@ -5,7 +5,7 @@ using UnityEngine;
 
 public class Basic2DPlatformController : MonoBehaviour
 {
-    public float walkingAcceleration,desiredHeightFromGround, groundDragCoef, airDragCoef;
+    public float walkingAcceleration,desiredHeightFromGround, groundDragCoef, airDragCoef, maxStep, gravity;
     private Vector3 velocity = Vector3.zero;
     // Start is called before the first frame update
     void Start()
@@ -22,8 +22,10 @@ public class Basic2DPlatformController : MonoBehaviour
         if (hit.collider != null)
         {
             Debug.DrawRay(transform.position, Vector3.down * hit.distance, Color.yellow);
-            transform.Translate(Vector3.up*(desiredHeightFromGround-hit.distance));
-            return hit.distance <= desiredHeightFromGround;
+            float step = desiredHeightFromGround - hit.distance;
+            bool grounded = step >= 0f;
+            if (grounded && step < maxStep) transform.Translate(Vector3.up*step);
+            return grounded;
         }
         return false;
     }
@@ -31,24 +33,25 @@ public class Basic2DPlatformController : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        velocity -= velocity * (airDragCoef*Time.deltaTime);
+        velocity -= velocity * (airDragCoef * Time.deltaTime);
         if (!isGrounded())
         {
-            velocity += Vector3.down * 10 * Time.deltaTime;
+            velocity += Vector3.down * gravity * Time.deltaTime;
         }
         else
         {
             velocity.y = 0;
-            velocity -= velocity * (groundDragCoef*Time.deltaTime);
+            velocity -= velocity * (groundDragCoef * Time.deltaTime);
         }
-        if(Input.GetKey(KeyCode.D))
+        if (Input.GetKey(KeyCode.D))
         {
-            velocity += Vector3.right * Time.deltaTime;
+            velocity += Vector3.right * walkingAcceleration * Time.deltaTime;
         }
         if(Input.GetKey(KeyCode.A))
         {
-            velocity += Vector3.left * Time.deltaTime;
+            velocity += Vector3.left * walkingAcceleration * Time.deltaTime;
         }
+
         transform.Translate(velocity*Time.deltaTime);
     }
 }
