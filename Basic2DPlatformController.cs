@@ -5,7 +5,7 @@ using UnityEngine;
 [RequireComponent(typeof(CapsuleCollider2D))]
 public class Basic2DPlatformController : MonoBehaviour
 {
-    public float walkingAcceleration,desiredHeightFromGround, groundDragCoef, airDragCoef, maxStep, gravity, jumpVelocity;
+    public float walkingAcceleration,desiredHeightFromGround, groundDragCoef, airDragCoef, maxStep, gravity, jumpVelocity, wallDragCoef;
     public bool mustBeGroundedToMove;
     private Vector3 velocity = Vector3.zero;
     // Start is called before the first frame update
@@ -66,6 +66,10 @@ public class Basic2DPlatformController : MonoBehaviour
         if(wallLeft != null && velocity.x<0f || wallRight != null && velocity.x>0f)
         {
             velocity.x = 0f;
+        }
+        if(wallLeft !=null||wallRight!=null) 
+        {
+            velocity.y -= velocity.y * wallDragCoef * Time.deltaTime;
         }
         transform.Translate(velocity*Time.deltaTime);
     }
