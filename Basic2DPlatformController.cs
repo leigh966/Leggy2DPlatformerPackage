@@ -3,7 +3,7 @@ using UnityEngine;
 [RequireComponent(typeof(CapsuleCollider2D))]
 public class Basic2DPlatformController : MonoBehaviour
 {
-    public float walkingAcceleration, desiredHeightFromGround, groundDragCoef, airDragCoef, maxStep, gravity, jumpVelocity, wallDragCoef;
+    public float walkingAcceleration, desiredHeightFromGround, groundDragCoef, airDragCoef, maxStep, gravity, jumpVelocity, wallDragCoef, runSpeedFactor;
     public bool mustBeGroundedToMove;
     private Vector3 velocity = Vector3.zero;
     // Start is called before the first frame update
@@ -63,16 +63,17 @@ public class Basic2DPlatformController : MonoBehaviour
         }
     }
 
-    void HandleLeftRightMovement(bool grounded, bool rightDown, bool leftDown)
+    void HandleLeftRightMovement(bool grounded, bool rightDown, bool leftDown, bool runningDown)
     {
-
+        Vector3 acceleration = Vector3.right * walkingAcceleration * Time.deltaTime;
+        if (runningDown) acceleration *= runSpeedFactor;
         if (rightDown)
         {
-            velocity += Vector3.right * walkingAcceleration * Time.deltaTime;
+            velocity += acceleration;
         }
         if (leftDown)
         {
-            velocity += Vector3.left * walkingAcceleration * Time.deltaTime;
+            velocity -= acceleration;
         }
 
     }
@@ -98,6 +99,7 @@ public class Basic2DPlatformController : MonoBehaviour
     {
         bool jumpPressed = Input.GetKeyDown(KeyCode.Space);
         bool leftDown = Input.GetKey(KeyCode.A), rightDown = Input.GetKey(KeyCode.D);
+        bool runningDown = Input.GetKey(KeyCode.LeftShift);
         bool slidingLeft = wallLeft != null, slidingRight = wallRight;
         velocity -= velocity * (airDragCoef * Time.deltaTime);
         bool grounded = isGrounded();
@@ -115,7 +117,7 @@ public class Basic2DPlatformController : MonoBehaviour
         bool canMove = !mustBeGroundedToMove || grounded;
         if(canMove)
         {
-            HandleLeftRightMovement(grounded, rightDown, leftDown);
+            HandleLeftRightMovement(grounded, rightDown, leftDown, runningDown);
         }
 
         ResolveWallCollision(slidingLeft, slidingRight);
