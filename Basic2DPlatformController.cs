@@ -5,7 +5,8 @@ using UnityEngine;
 
 public class Basic2DPlatformController : MonoBehaviour
 {
-    public float walkingAcceleration,desiredHeightFromGround, groundDragCoef, airDragCoef, maxStep, gravity;
+    public float walkingAcceleration,desiredHeightFromGround, groundDragCoef, airDragCoef, maxStep, gravity, jumpVelocity;
+    public bool mustBeGroundedToMove;
     private Vector3 velocity = Vector3.zero;
     // Start is called before the first frame update
     void Start()
@@ -34,22 +35,31 @@ public class Basic2DPlatformController : MonoBehaviour
     void Update()
     {
         velocity -= velocity * (airDragCoef * Time.deltaTime);
-        if (!isGrounded())
+        bool grounded = isGrounded();
+        if (!grounded)
         {
             velocity += Vector3.down * gravity * Time.deltaTime;
+            
         }
         else
         {
             velocity.y = 0;
             velocity -= velocity * (groundDragCoef * Time.deltaTime);
+            if (Input.GetKeyDown(KeyCode.Space))
+            {
+                velocity.y = jumpVelocity;
+            }
         }
-        if (Input.GetKey(KeyCode.D))
+        if (!mustBeGroundedToMove || grounded)
         {
-            velocity += Vector3.right * walkingAcceleration * Time.deltaTime;
-        }
-        if(Input.GetKey(KeyCode.A))
-        {
-            velocity += Vector3.left * walkingAcceleration * Time.deltaTime;
+            if (Input.GetKey(KeyCode.D))
+            {
+                velocity += Vector3.right * walkingAcceleration * Time.deltaTime;
+            }
+            if (Input.GetKey(KeyCode.A))
+            {
+                velocity += Vector3.left * walkingAcceleration * Time.deltaTime;
+            }
         }
 
         transform.Translate(velocity*Time.deltaTime);
