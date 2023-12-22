@@ -33,32 +33,51 @@ public class Basic2DPlatformController : MonoBehaviour
 
     Collider2D wallRight = null, wallLeft = null;
 
+
+    void WallJump(float xDirection)
+    {
+        Vector3 velocityChange = new Vector3(xDirection, 1f, 0f).normalized*jumpVelocity;
+        velocity += velocityChange;
+    }
+
+
     // Update is called once per frame
     void Update()
     {
+        bool jumpPressed = Input.GetKeyDown(KeyCode.Space);
+        bool leftDown = Input.GetKey(KeyCode.A), rightDown = Input.GetKey(KeyCode.D);
+        bool slidingLeft = wallLeft != null, slidingRight = wallRight;
         velocity -= velocity * (airDragCoef * Time.deltaTime);
         bool grounded = isGrounded();
         if (!grounded)
         {
             velocity += Vector3.down * gravity * Time.deltaTime;
+            if(slidingLeft && jumpPressed)
+            {
+                WallJump(1f);
+            }
+            else if (slidingRight && jumpPressed)
+            {
+                WallJump(-1f);
+            }
             
         }
         else
         {
             velocity.y = 0;
             velocity -= velocity * (groundDragCoef * Time.deltaTime);
-            if (Input.GetKeyDown(KeyCode.Space))
+            if (jumpPressed)
             {
                 velocity.y = jumpVelocity;
             }
         }
         if (!mustBeGroundedToMove || grounded)
         {
-            if (Input.GetKey(KeyCode.D))
+            if (rightDown)
             {
                 velocity += Vector3.right * walkingAcceleration * Time.deltaTime;
             }
-            if (Input.GetKey(KeyCode.A))
+            if (leftDown)
             {
                 velocity += Vector3.left * walkingAcceleration * Time.deltaTime;
             }
@@ -67,7 +86,7 @@ public class Basic2DPlatformController : MonoBehaviour
         {
             velocity.x = 0f;
         }
-        if(wallLeft !=null||wallRight!=null) 
+        if(slidingLeft||slidingRight) 
         {
             velocity.y -= velocity.y * wallDragCoef * Time.deltaTime;
         }
