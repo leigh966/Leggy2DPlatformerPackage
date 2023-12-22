@@ -1,17 +1,15 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 [RequireComponent(typeof(CapsuleCollider2D))]
 public class Basic2DPlatformController : MonoBehaviour
 {
-    public float walkingAcceleration,desiredHeightFromGround, groundDragCoef, airDragCoef, maxStep, gravity, jumpVelocity, wallDragCoef;
+    public float walkingAcceleration, desiredHeightFromGround, groundDragCoef, airDragCoef, maxStep, gravity, jumpVelocity, wallDragCoef;
     public bool mustBeGroundedToMove;
     private Vector3 velocity = Vector3.zero;
     // Start is called before the first frame update
     void Start()
     {
-        
+
     }
     bool isGrounded()
     {
@@ -25,7 +23,7 @@ public class Basic2DPlatformController : MonoBehaviour
             Debug.DrawRay(transform.position, Vector3.down * hit.distance, Color.yellow);
             float step = desiredHeightFromGround - hit.distance;
             bool grounded = step >= 0f;
-            if (grounded && step < maxStep) transform.Translate(Vector3.up*step);
+            if (grounded && step < maxStep) transform.Translate(Vector3.up * step);
             return grounded;
         }
         return false;
@@ -36,10 +34,64 @@ public class Basic2DPlatformController : MonoBehaviour
 
     void WallJump(float xDirection)
     {
-        Vector3 velocityChange = new Vector3(xDirection, 1f, 0f).normalized*jumpVelocity;
+        Vector3 velocityChange = new Vector3(xDirection, 1f, 0f).normalized * jumpVelocity;
         velocity += velocityChange;
     }
 
+    void HandleWallJump(bool slidingLeft, bool slidingRight, bool jumpPressed)
+    {
+        if (slidingLeft && jumpPressed)
+        {
+            WallJump(1f);
+        }
+        else if (slidingRight && jumpPressed)
+        {
+            WallJump(-1f);
+        }
+    }
+
+    void ApplyGravity()
+    {
+        velocity -= velocity * (groundDragCoef * Time.deltaTime);
+    }
+
+    void HandleJump(bool jumpPressed)
+    {
+        if (jumpPressed)
+        {
+            velocity.y = jumpVelocity;
+        }
+    }
+
+    void HandleLeftRightMovement(bool grounded, bool rightDown, bool leftDown)
+    {
+
+        if (rightDown)
+        {
+            velocity += Vector3.right * walkingAcceleration * Time.deltaTime;
+        }
+        if (leftDown)
+        {
+            velocity += Vector3.left * walkingAcceleration * Time.deltaTime;
+        }
+
+    }
+
+    void ResolveWallCollision(bool slidingLeft, bool slidingRight)
+    {
+        if (slidingLeft && velocity.x < 0f || slidingRight && velocity.x > 0f)
+        {
+            velocity.x = 0f;
+        }
+    }
+
+    void HandleWallDrag(bool slidingLeft, bool slidingRight)
+    {
+        if (slidingLeft || slidingRight)
+        {
+            velocity.y -= velocity.y * wallDragCoef * Time.deltaTime;
+        }
+    }
 
     // Update is called once per frame
     void Update()
@@ -52,57 +104,37 @@ public class Basic2DPlatformController : MonoBehaviour
         if (!grounded)
         {
             velocity += Vector3.down * gravity * Time.deltaTime;
-            if(slidingLeft && jumpPressed)
-            {
-                WallJump(1f);
-            }
-            else if (slidingRight && jumpPressed)
-            {
-                WallJump(-1f);
-            }
-            
+            HandleWallJump(slidingLeft, slidingRight, jumpPressed);
         }
         else
         {
             velocity.y = 0;
-            velocity -= velocity * (groundDragCoef * Time.deltaTime);
-            if (jumpPressed)
-            {
-                velocity.y = jumpVelocity;
-            }
+            ApplyGravity();
+            HandleJump(jumpPressed);
         }
-        if (!mustBeGroundedToMove || grounded)
+        bool canMove = !mustBeGroundedToMove || grounded;
+        if(canMove)
         {
-            if (rightDown)
-            {
-                velocity += Vector3.right * walkingAcceleration * Time.deltaTime;
-            }
-            if (leftDown)
-            {
-                velocity += Vector3.left * walkingAcceleration * Time.deltaTime;
-            }
+            HandleLeftRightMovement(grounded, rightDown, leftDown);
         }
-        if(wallLeft != null && velocity.x<0f || wallRight != null && velocity.x>0f)
-        {
-            velocity.x = 0f;
-        }
-        if(slidingLeft||slidingRight) 
-        {
-            velocity.y -= velocity.y * wallDragCoef * Time.deltaTime;
-        }
-        transform.Translate(velocity*Time.deltaTime);
+
+        ResolveWallCollision(slidingLeft, slidingRight);
+
+        HandleWallDrag(slidingLeft, slidingRight);
+
+        transform.Translate(velocity * Time.deltaTime);
     }
 
     private void OnTriggerEnter2D(Collider2D collider)
     {
-        if(collider.gameObject.layer == 6) // walls
+        if (collider.gameObject.layer == 6) // walls
         {
             float xDifference = collider.transform.position.x - transform.position.x;
-            if(xDifference > 0.5f)
+            if (xDifference > 0.5f)
             {
                 wallRight = collider;
             }
-            else if(xDifference < -0.5f)
+            else if (xDifference < -0.5f)
             {
                 wallLeft = collider;
             }
@@ -112,8 +144,8 @@ public class Basic2DPlatformController : MonoBehaviour
 
     private void OnTriggerExit2D(Collider2D collision)
     {
-        if(collision==wallLeft) wallLeft = null;
-        if(collision==wallRight) wallRight = null;
+        if (collision == wallLeft) wallLeft = null;
+        if (collision == wallRight) wallRight = null;
     }
 
 }
